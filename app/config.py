@@ -2,6 +2,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Настройки приложения, загружаемые из переменных окружения / файла .env.
+
+    Attributes:
+        DATABASE_URL (str): URL подключения к БД (async).
+        DATABASE_URL_SYNC (str): URL подключения к БД (sync, для Alembic).
+        JWT_SECRET_KEY (str): Секретный ключ для подписи JWT-токенов.
+        JWT_ALGORITHM (str): Алгоритм подписи JWT (по умолчанию HS256).
+        ACCESS_TOKEN_EXPIRE_MINUTES (int): Время жизни access-токена в минутах.
+        PAYMENT_SECRET_KEY (str): Секретный ключ для проверки подписи вебхука.
+    """
 
     model_config = SettingsConfigDict(
         env_file=".env",
