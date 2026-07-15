@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models import Account, Payment, User
+from app.models import User
 from app.schemas import AccountOut, PaymentOut, UserOut
+from app.services import AccountService, PaymentService
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
 
@@ -39,12 +40,7 @@ async def get_my_accounts(
     Returns:
         list[AccountOut]: Список счетов пользователя.
     """
-    from sqlalchemy import select
-
-    result = await db.execute(
-        select(Account).where(Account.user_id == current_user.id)
-    )
-    return result.scalars().all()
+    return await AccountService.list_by_user(db, current_user.id)
 
 
 @router.get("/me/payments", response_model=list[PaymentOut])
@@ -61,9 +57,4 @@ async def get_my_payments(
     Returns:
         list[PaymentOut]: Список платежей пользователя.
     """
-    from sqlalchemy import select
-
-    result = await db.execute(
-        select(Payment).where(Payment.user_id == current_user.id)
-    )
-    return result.scalars().all()
+    return await PaymentService.list_by_user(db, current_user.id)

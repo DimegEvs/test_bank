@@ -2,14 +2,12 @@ import hashlib
 import hmac
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.models import Account, Payment, User
 from app.schemas import WebhookRequest
+from app.services import AccountService, PaymentService, UserService
 
 router = APIRouter(prefix="/api/webhook", tags=["Webhook"])
 
@@ -69,15 +67,12 @@ async def process_payment_webhook(
             detail="Invalid signature",
         )
 
-    existing = await db.execute(
-        select(Payment).where(Payment.transaction_id == data.transaction_id)
-    )
-    if existing.scalar_one_or_none() is not None:
+    # 2. Проверка идемпотентности — если транзакция уже обработана, возвращаем 200
+    if await PaymentService.get_by_transaction_id(db, data.transaction_id) is not None:
         return {"status": "already_processed"}
 
     # 3. Проверка существования пользователя
-    user_result = await db.execute(select(User).where(User.id == data.user_id))
-    user = user_result.scalar_one_or_none()
+    user = await UserService.get_by_id(db, data.user_id)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -85,48 +80,33 @@ async def process_payment_webhook(
         )
 
     # 4. Проверка / создание счёта
-    account_result = await db.execute(
-        select(Account).where(
-            Account.id == data.account_id,
-            Account.user_id == data.user_id,
-        )
+    account = await AccountService.get_by_id_and_user(
+        db, data.account_id, data.user_id
     )
-    account = account_result.scalar_one_or_none()
 
     if account is None:
         # Проверяем, не принадлежит ли account_id другому пользователю
-        account_by_id = await db.execute(
-            select(Account).where(Account.id == data.account_id)
-        )
-        if account_by_id.scalar_one_or_none() is not None:
+        existing_account = await AccountService.get_by_id(db, data.account_id)
+        if existing_account is not None:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Account belongs to another user",
             )
-        # Создаём новый счёт для пользователя
-        account = Account(
-            id=data.account_id,
-            user_id=data.user_id,
-            balance=0,
+        # Создаём новый счёт для пользователя (без commit — фиксируется вместе с платежом)
+        account = await AccountService.create(
+            db, commit=False, user_id=data.user_id, account_id=data.account_id
         )
-        db.add(account)
-        await db.flush()
 
     # 5. Сохранение платежа и начисление суммы на баланс
-    payment = Payment(
+    result = await PaymentService.create_and_credit(
+        db,
+        account=account,
         transaction_id=data.transaction_id,
-        account_id=account.id,
         user_id=data.user_id,
         amount=data.amount,
     )
-    db.add(payment)
-    account.balance += data.amount
 
-    try:
-        await db.commit()
-    except IntegrityError:
-        await db.rollback()
-        # Состояние гонки: другой запрос уже вставил тот же transaction_id
+    if result == "already_processed":
         return {"status": "already_processed"}
 
     return {"status": "processed", "account_id": account.id, "new_balance": str(account.balance)}

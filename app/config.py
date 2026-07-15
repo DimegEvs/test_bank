@@ -11,6 +11,9 @@ class Settings(BaseSettings):
         JWT_ALGORITHM (str): Алгоритм подписи JWT (по умолчанию HS256).
         ACCESS_TOKEN_EXPIRE_MINUTES (int): Время жизни access-токена в минутах.
         PAYMENT_SECRET_KEY (str): Секретный ключ для проверки подписи вебхука.
+        COOKIE_NAME (str): Имя cookie для хранения access-токена.
+        COOKIE_SECURE (bool): Флаг Secure (только HTTPS в продакшене).
+        COOKIE_SAMESITE (str): Политика SameSite для cookie.
     """
 
     model_config = SettingsConfigDict(
@@ -27,6 +30,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     PAYMENT_SECRET_KEY: str
+
+    COOKIE_NAME: str = "access_token"
+    COOKIE_SECURE: bool = False
+    COOKIE_SAMESITE: str = "lax"
 
 
 settings = Settings()

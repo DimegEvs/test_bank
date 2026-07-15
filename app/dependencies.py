@@ -1,39 +1,39 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.models import User, UserRole
 from app.security import decode_access_token
 
-bearer_scheme = HTTPBearer(auto_error=True)
-
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    access_token: str | None = Cookie(default=None, alias=settings.COOKIE_NAME),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """Определяет текущего аутентифицированного пользователя из Bearer JWT.
+    """Определяет текущего аутентифицированного пользователя из cookie с JWT.
 
     Args:
-        credentials (HTTPAuthorizationCredentials): Учётные данные из заголовка Authorization.
+        access_token (str | None): JWT-токен из cookie.
         db (AsyncSession): Асинхронная сессия БД.
 
     Returns:
         User: Текущий аутентифицированный пользователь.
 
     Raises:
-        HTTPException: 401 — если токен невалиден или пользователь не найден.
+        HTTPException: 401 — если токен отсутствует, невалиден или пользователь не найден.
     """
-    token = credentials.credentials
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if access_token is None:
+        raise credentials_exception
+
     try:
-        payload = decode_access_token(token)
+        payload = decode_access_token(access_token)
         user_id = payload.get("sub")
         if user_id is None:
             raise credentials_exception
