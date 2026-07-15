@@ -116,6 +116,15 @@ class AccountOut(BaseModel):
     created_at: datetime
 
 
+class AccountCreate(BaseModel):
+    """Схема запроса для создания счёта.
+
+    Attributes:
+        balance (Decimal): Начальный баланс (по умолчанию 0.00, только для admin).
+    """
+    balance: Decimal = Field(default=Decimal("0.00"), ge=0)
+
+
 # ---------------------------------------------------------------------------
 # Payment
 # ---------------------------------------------------------------------------

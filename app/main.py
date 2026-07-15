@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.router import admin_router, auth_router, users_router, webhook_router
@@ -54,15 +56,15 @@ async def health_check():
     return {"status": "ok"}
 
 
-@app.get("/", tags=["Root"])
-async def root():
-    """Корневой эндпоинт с информацией об API.
+# UI — отдача статических файлов
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.get("/ui", tags=["UI"])
+async def ui():
+    """Отдаёт главную страницу веб-интерфейса.
 
     Returns:
-        dict: Название приложения, версия и ссылка на документацию.
+        FileResponse: HTML-файл index.html.
     """
-    return {
-        "app": "Test Bank API",
-        "version": "1.0.0",
-        "docs": "/docs",
-    }
+    return FileResponse("static/index.html")

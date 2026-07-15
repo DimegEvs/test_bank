@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bank</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f2f5; color: #1a1a2e; min-height: 100vh;
+        }
+
+        /* ---------- Auth ---------- */
+        #auth-view {
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+        }
+        .auth-card {
+            background: #fff; border-radius: 12px; padding: 40px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08); width: 100%; max-width: 400px;
+        }
+        .auth-card h1 { text-align: center; margin-bottom: 8px; font-size: 24px; }
+        .auth-card .subtitle { text-align: center; color: #666; margin-bottom: 24px; font-size: 14px; }
+        .auth-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+        .auth-tab {
+            flex: 1; padding: 10px; border: none; background: #f0f2f5;
+            border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;
+            transition: 0.2s;
+        }
+        .auth-tab.active { background: #4f46e5; color: #fff; }
+
+        /* ---------- Forms ---------- */
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: #555; }
+        input, select {
+            width: 100%; padding: 10px 12px; border: 1px solid #d1d5db;
+            border-radius: 8px; font-size: 14px; transition: 0.2s;
+        }
+        input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+
+        /* ---------- Buttons ---------- */
+        .btn {
+            padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer;
+            font-size: 14px; font-weight: 500; transition: 0.2s; display: inline-flex;
+            align-items: center; gap: 6px;
+        }
+        .btn-primary { background: #4f46e5; color: #fff; width: 100%; justify-content: center; }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+        .btn-success { background: #10b981; color: #fff; }
+        .btn-success:hover { background: #059669; }
+        .btn-outline { background: transparent; border: 1px solid #d1d5db; color: #555; }
+        .btn-outline:hover { background: #f0f2f5; }
+
+        /* ---------- App layout ---------- */
+        #app-view { display: none; }
+        .header {
+            background: #fff; padding: 16px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-left h2 { font-size: 18px; }
+        .badge {
+            padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+        .badge-admin { background: #fef3c7; color: #92400e; }
+        .badge-user { background: #dbeafe; color: #1e40af; }
+
+        .nav {
+            background: #fff; display: flex; gap: 4px; padding: 0 24px;
+            border-bottom: 1px solid #e5e7eb; overflow-x: auto;
+        }
+        .nav-item {
+            padding: 12px 20px; border: none; background: none; cursor: pointer;
+            font-size: 14px; font-weight: 500; color: #667; border-bottom: 2px solid transparent;
+            white-space: nowrap; transition: 0.2s;
+        }
+        .nav-item:hover { color: #333; }
+        .nav-item.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+
+        .content { max-width: 900px; margin: 24px auto; padding: 0 24px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ---------- Cards / Tables ---------- */
+        .card {
+            background: #fff; border-radius: 12px; padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 16px;
+        }
+        .card h3 { margin-bottom: 16px; font-size: 16px; }
+        .info-row {
+            display: flex; justify-content: space-between; padding: 10px 0;
+            border-bottom: 1px solid #f0f2f5; font-size: 14px;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label { color: #888; }
+        .info-row .value { font-weight: 500; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; padding: 10px 12px; color: #888; font-weight: 500; border-bottom: 2px solid #e5e7eb; }
+        td { padding: 12px; border-bottom: 1px solid #f0f2f5; }
+        tr:hover { background: #f9fafb; }
+
+        .balance { font-weight: 600; color: #059669; }
+        .empty-state { text-align: center; padding: 32px; color: #999; font-size: 14px; }
+
+        .actions { display: flex; gap: 8px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-header h3 { margin: 0; }
+
+        .alert {
+            padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px;
+        }
+        .alert-error { background: #fee2e2; color: #991b1b; }
+        .alert-success { background: #d1fae5; color: #065f46; }
+        .alert-info { background: #dbeafe; color: #1e40af; }
+
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #fff; border-radius: 12px; padding: 32px; width: 100%; max-width: 450px;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal h3 { margin-bottom: 20px; }
+        .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+        .modal-actions .btn { flex: 1; justify-content: center; }
+
+        .webhook-result {
+            background: #1a1a2e; color: #a5b4fc; padding: 16px; border-radius: 8px;
+            font-family: monospace; font-size: 13px; margin-top: 12px; white-space: pre-wrap;
+            word-break: break-all; display: none;
+        }
+        .webhook-result.active { display: block; }
+    </style>
+</head>
+<body>
+
+<!-- ===================== AUTH VIEW ===================== -->
+<div id="auth-view">
+    <div class="auth-card">
+        <h1>Test Bank</h1>
+        <p class="subtitle">Войдите или зарегистрируйтесь</p>
+        <div id="auth-alert"></div>
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchAuthTab('login')">Вход</button>
+            <button class="auth-tab" onclick="switchAuthTab('register')">Регистрация</button>
+        </div>
+
+        <div id="login-form">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="login-email" placeholder="user@test.com" value="user@test.com">
+            </div>
+            <div class="form-group">
+                <label>Пароль</label>
+                <input type="password" id="login-password" placeholder="userpass" value="userpass">
+            </div>
+            <button class="btn btn-primary" onclick="doLogin()">Войти</button>
+        </div>
+
+        <div id="register-form" style="display:none">
+            <div class="form-group">
+                <label>Имя</label>
+                <input type="text" id="reg-name" placeholder="Иван Иванов">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="reg-email" placeholder="ivan@example.com">
+            </div>
+            <div class="form-group">
+                <label>Пароль (мин. 6 символов)</label>
+                <input type="password" id="reg-password" placeholder="password123">
+            </div>
+            <button class="btn btn-primary" onclick="doRegister()">Зарегистрироваться</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== APP VIEW ===================== -->
+<div id="app-view">
+    <div class="header">
+        <div class="header-left">
+            <h2>Test Bank</h2>
+            <span id="user-badge" class="badge badge-user">user</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+            <span id="user-email" style="font-size:14px;color:#667"></span>
+            <button class="btn btn-outline btn-sm" onclick="doLogout()">Выйти</button>
+        </div>
+    </div>
+
+    <div class="nav">
+        <button class="nav-item active" data-tab="profile" onclick="switchTab('profile')">Профиль</button>
+        <button class="nav-item" data-tab="accounts" onclick="switchTab('accounts')">Счета</button>
+        <button class="nav-item" data-tab="payments" onclick="switchTab('payments')">Платежи</button>
+        <button class="nav-item admin-only" data-tab="admin" onclick="switchTab('admin')" style="display:none">Админ</button>
+        <button class="nav-item" data-tab="webhook" onclick="switchTab('webhook')">Вебхук</button>
+    </div>
+
+    <div class="content">
+        <div id="app-alert"></div>
+
+        <!-- Profile -->
+        <div id="tab-profile" class="tab-content active">
+            <div class="card">
+                <h3>Профиль</h3>
+                <div id="profile-info"></div>
+            </div>
+        </div>
+
+        <!-- Accounts -->
+        <div id="tab-accounts" class="tab-content">
+            <div class="section-header">
+                <h3>Мои счета</h3>
+                <button class="btn btn-primary btn-sm" onclick="createAccount()">+ Создать счёт</button>
+            </div>
+            <div id="accounts-list"></div>
+        </div>
+
+        <!-- Payments -->
+        <div id="tab-payments" class="tab-content">
+            <div class="card">
+                <h3>История платежей</h3>
+                <div id="payments-list"></div>
+            </div>
+        </div>
+
+        <!-- Admin -->
+        <div id="tab-admin" class="tab-content">
+            <div class="section-header">
+                <h3>Пользователи</h3>
+                <button class="btn btn-primary btn-sm" onclick="showCreateUserModal()">+ Создать</button>
+            </div>
+            <div id="admin-users-list"></div>
+        </div>
+
+        <!-- Webhook -->
+        <div id="tab-webhook" class="tab-content">
+            <div class="card">
+                <h3>Тестер вебхука</h3>
+                <p style="color:#888;font-size:13px;margin-bottom:16px">
+                    Эмуляция запроса от сторонней платёжной системы.
+                    Подпись генерируется автоматически (SHA256).
+                </p>
+                <div class="form-group">
+                    <label>User ID</label>
+                    <input type="number" id="wh-user-id" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Account ID</label>
+                    <input type="number" id="wh-account-id" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Сумма</label>
+                    <input type="number" id="wh-amount" value="100" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Transaction ID (UUID)</label>
+                    <div style="display:flex;gap:8px">
+                        <input type="text" id="wh-tx-id" style="flex:1">
+                        <button class="btn btn-outline btn-sm" onclick="generateTxId()">Сгенерировать</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Секретный ключ</label>
+                    <input type="text" id="wh-secret" value="gfdmhghif38yrf9ew0jkf32">
+                </div>
+                <button class="btn btn-primary" onclick="sendWebhook()">Отправить вебхук</button>
+                <div id="webhook-result" class="webhook-result"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== MODALS ===================== -->
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+// ==================== State ====================
+let currentUser = null;
+
+// ==================== API helper ====================
+async function api(method, path, body) {
+    const opts = {
+        method,
+        headers: {},
+        credentials: 'include',
+    };
+    if (body !== undefined) {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(body);
+    }
+    const res = await fetch(path, opts);
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
+
+    if (!res.ok) {
+        throw { status: res.status, detail: data?.detail || 'Unknown error' };
+    }
+    return data;
+}
+
+// ==================== Alerts ====================
+function showAuthAlert(type, msg) {
+    const el = document.getElementById('auth-alert');
+    el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    setTimeout(() => el.innerHTML = '', 4000);
+}
+
+function showAppAlert(type, msg) {
+    const el = document.getElementById('app-alert');
+    el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    setTimeout(() => el.innerHTML = '', 4000);
+}
+
+// ==================== Auth tabs ====================
+function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.auth-tab`).classList.remove('active');
+    event.target.classList.add('active');
+    document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+}
+
+// ==================== Login / Register / Logout ====================
+async function doLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    try {
+        await api('POST', '/api/auth/login', { email, password });
+        await initApp();
+    } catch (err) {
+        showAuthAlert('error', err.detail || 'Ошибка входа');
+    }
+}
+
+async function doRegister() {
+    const full_name = document.getElementById('reg-name').value;
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-password').value;
+    try {
+        await api('POST', '/api/auth/register', { full_name, email, password });
+        await initApp();
+    } catch (err) {
+        showAuthAlert('error', err.detail || 'Ошибка регистрации');
+    }
+}
+
+async function doLogout() {
+    try {
+        await api('POST', '/api/auth/logout');
+    } catch (e) { }
+    currentUser = null;
+    document.getElementById('app-view').style.display = 'none';
+    document.getElementById('auth-view').style.display = 'flex';
+}
+
+// ==================== Init app ====================
+async function initApp() {
+    try {
+        currentUser = await api('GET', '/api/users/me');
+    } catch (err) {
+        document.getElementById('auth-view').style.display = 'flex';
+        document.getElementById('app-view').style.display = 'none';
+        return;
+    }
+
+    document.getElementById('auth-view').style.display = 'none';
+    document.getElementById('app-view').style.display = 'block';
+    document.getElementById('user-email').textContent = currentUser.email;
+
+    const badge = document.getElementById('user-badge');
+    badge.textContent = currentUser.role;
+    badge.className = `badge badge-${currentUser.role}`;
+
+    const isAdmin = currentUser.role === 'admin';
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+
+    loadProfile();
+    loadAccounts();
+    loadPayments();
+    if (isAdmin) loadAdminUsers();
+    generateTxId();
+}
+
+// ==================== Tabs ====================
+function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    event.target.classList.add('active');
+}
+
+// ==================== Profile ====================
+function loadProfile() {
+    document.getElementById('profile-info').innerHTML = `
+        <div class="info-row"><span class="label">ID</span><span class="value">${currentUser.id}</span></div>
+        <div class="info-row"><span class="label">Email</span><span class="value">${currentUser.email}</span></div>
+        <div class="info-row"><span class="label">Имя</span><span class="value">${currentUser.full_name}</span></div>
+        <div class="info-row"><span class="label">Роль</span><span class="value">${currentUser.role}</span></div>
+    `;
+}
+
+// ==================== Accounts ====================
+async function loadAccounts() {
+    try {
+        const accounts = await api('GET', '/api/users/me/accounts');
+        const el = document.getElementById('accounts-list');
+
+        if (!accounts.length) {
+            el.innerHTML = `<div class="card"><div class="empty-state">Счетов пока нет. Создайте первый!</div></div>`;
+            return;
+        }
+
+        let html = '<div class="card"><table><thead><tr><th>ID</th><th>Баланс</th><th>Создан</th><th></th></tr></thead><tbody>';
+        for (const a of accounts) {
+            const date = new Date(a.created_at).toLocaleString('ru-RU');
+            html += `<tr>
+                <td>#${a.id}</td>
+                <td class="balance">${parseFloat(a.balance).toFixed(2)}</td>
+                <td>${date}</td>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})">Удалить</button></td>
+            </tr>`;
+        }
+        html += '</tbody></table></div>';
+        el.innerHTML = html;
+    } catch (err) {
+        showAppAlert('error', 'Не удалось загрузить счета');
+    }
+}
+
+async function createAccount() {
+    try {
+        await api('POST', '/api/users/me/accounts');
+        showAppAlert('success', 'Счёт создан');
+        loadAccounts();
+    } catch (err) {
+        showAppAlert('error', err.detail || 'Ошибка создания счёта');
+    }
+}
+
+async function deleteAccount(id) {
+    if (!confirm('Удалить счёт?')) return;
+    try {
+        await api('DELETE', `/api/users/me/accounts/${id}`);
+        showAppAlert('success', 'Счёт удалён');
+        loadAccounts();
+    } catch (err) {
+        showAppAlert('error', err.detail || 'Ошибка удаления');
+    }
+}
+
+// ==================== Payments ====================
+async function loadPayments() {
+    try {
+        const payments = await api('GET', '/api/users/me/payments');
+        const el = document.getElementById('payments-list');
+
+        if (!payments.length) {
+            el.innerHTML = `<div class="empty-state">Платежей пока нет</div>`;
+            return;
+        }
+
+        let html = '<table><thead><tr><th>ID</th><th>Транзакция</th><th>Счёт</th><th>Сумма</th><th>Дата</th></tr></thead><tbody>';
+        for (const p of payments) {
+            const date = new Date(p.created_at).toLocaleString('ru-RU');
+            const txShort = p.transaction_id.substring(0, 8) + '...';
+            html += `<tr>
+                <td>#${p.id}</td>
+                <td title="${p.transaction_id}">${txShort}</td>
+                <td>#${p.account_id}</td>
+                <td class="balance">+${parseFloat(p.amount).toFixed(2)}</td>
+                <td>${date}</td>
+            </tr>`;
+        }
+        html += '</tbody></table>';
+        el.innerHTML = html;
+    } catch (err) {
+        document.getElementById('payments-list').innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
+    }
+}
+
+// ==================== Admin ====================
+async function loadAdminUsers() {
+    try {
+        const users = await api('GET', '/api/admin/users');
+        const el = document.getElementById('admin-users-list');
+
+        let html = '<div class="card"><table><thead><tr><th>ID</th><th>Email</th><th>Имя</th><th>Роль</th><th>Счета</th><th>Действия</th></tr></thead><tbody>';
+        for (const u of users) {
+            html += `<tr>
+                <td>#${u.id}</td>
+                <td>${u.email}</td>
+                <td>${u.full_name}</td>
+                <td><span class="badge badge-${u.role}">${u.role}</span></td>
+                <td><button class="btn btn-outline btn-sm" onclick="viewUserAccounts(${u.id})">Просмотр</button></td>
+                <td><div class="actions">
+                    <button class="btn btn-outline btn-sm" onclick="showEditUserModal(${u.id})">Изменить</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">Удалить</button>
+                </div></td>
+            </tr>`;
+        }
+        html += '</tbody></table></div>';
+        el.innerHTML = html;
+    } catch (err) {
+        document.getElementById('admin-users-list').innerHTML = '<div class="card"><div class="empty-state">Ошибка загрузки</div></div>';
+    }
+}
+
+function showCreateUserModal() {
+    document.getElementById('modal-content').innerHTML = `
+        <h3>Создать пользователя</h3>
+        <div class="form-group"><label>Email</label><input type="email" id="m-email"></div>
+        <div class="form-group"><label>Имя</label><input type="text" id="m-name"></div>
+        <div class="form-group"><label>Пароль</label><input type="password" id="m-password"></div>
+        <div class="form-group"><label>Роль</label><select id="m-role"><option value="user">user</option><option value="admin">admin</option></select></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
+            <button class="btn btn-primary" onclick="adminCreateUser()">Создать</button>
+        </div>
+    `;
+    document.getElementById('modal-overlay').classList.add('active');
+}
+
+async function showEditUserModal(userId) {
+    try {
+        const users = await api('GET', '/api/admin/users');
+        const u = users.find(x => x.id === userId);
+        if (!u) return;
+
+        document.getElementById('modal-content').innerHTML = `
+            <h3>Изменить пользователя #${u.id}</h3>
+            <div class="form-group"><label>Email</label><input type="email" id="m-email" value="${u.email}"></div>
+            <div class="form-group"><label>Имя</label><input type="text" id="m-name" value="${u.full_name}"></div>
+            <div class="form-group"><label>Новый пароль (оставьте пустым чтобы не менять)</label><input type="password" id="m-password"></div>
+            <div class="form-group"><label>Роль</label><select id="m-role">
+                <option value="user" ${u.role === 'user' ? 'selected' : ''}>user</option>
+                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>admin</option>
+            </select></div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-primary" onclick="adminUpdateUser(${u.id})">Сохранить</button>
+            </div>
+        `;
+        document.getElementById('modal-overlay').classList.add('active');
+    } catch (err) {
+        showAppAlert('error', 'Ошибка загрузки данных');
+    }
+}
+
+async function adminCreateUser() {
+    const email = document.getElementById('m-email').value;
+    const full_name = document.getElementById('m-name').value;
+    const password = document.getElementById('m-password').value;
+    const role = document.getElementById('m-role').value;
+    try {
+        await api('POST', '/api/admin/users', { email, full_name, password, role });
+        closeModal();
+        showAppAlert('success', 'Пользователь создан');
+        loadAdminUsers();
+    } catch (err) {
+        showAppAlert('error', err.detail || 'Ошибка');
+    }
+}
+
+async function adminUpdateUser(userId) {
+    const email = document.getElementById('m-email').value;
+    const full_name = document.getElementById('m-name').value;
+    const password = document.getElementById('m-password').value;
+    const role = document.getElementById('m-role').value;
+    const body = { email, full_name, role };
+    if (password) body.password = password;
+    try {
+        await api('PUT', `/api/admin/users/${userId}`, body);
+        closeModal();
+        showAppAlert('success', 'Пользователь обновлён');
+        loadAdminUsers();
+    } catch (err) {
+        showAppAlert('error', err.detail || 'Ошибка');
+    }
+}
+
+async function deleteUser(userId) {
+    if (!confirm('Удалить пользователя?')) return;
+    try {
+        await api('DELETE', `/api/admin/users/${userId}`);
+        showAppAlert('success', 'Пользователь удалён');
+        loadAdminUsers();
+    } catch (err) {
+        showAppAlert('error', err.detail || 'Ошибка');
+    }
+}
+
+async function viewUserAccounts(userId) {
+    try {
+        const accounts = await api('GET', `/api/admin/users/${userId}/accounts`);
+        let html = `<h3>Счета пользователя #${userId}</h3>`;
+        if (!accounts.length) {
+            html += '<div class="empty-state">Счетов нет</div>';
+        } else {
+            html += '<table><thead><tr><th>ID</th><th>Баланс</th><th>Создан</th></tr></thead><tbody>';
+            for (const a of accounts) {
+                const date = new Date(a.created_at).toLocaleString('ru-RU');
+                html += `<tr><td>#${a.id}</td><td class="balance">${parseFloat(a.balance).toFixed(2)}</td><td>${date}</td></tr>`;
+            }
+            html += '</tbody></table>';
+        }
+        html += `<div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">Закрыть</button></div>`;
+
+        document.getElementById('modal-content').innerHTML = html;
+        document.getElementById('modal-overlay').classList.add('active');
+    } catch (err) {
+        showAppAlert('error', 'Ошибка загрузки счетов');
+    }
+}
+
+function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('active');
+}
+
+// ==================== Webhook ====================
+function generateTxId() {
+    const uuid = crypto.randomUUID();
+    document.getElementById('wh-tx-id').value = uuid;
+}
+
+async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    return Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function sendWebhook() {
+    const userId = parseInt(document.getElementById('wh-user-id').value);
+    const accountId = parseInt(document.getElementById('wh-account-id').value);
+    const amount = document.getElementById('wh-amount').value;
+    const txId = document.getElementById('wh-tx-id').value;
+    const secret = document.getElementById('wh-secret').value;
+    const resultEl = document.getElementById('webhook-result');
+
+    if (!txId) {
+        showAppAlert('error', 'Сгенерируйте Transaction ID');
+        return;
+    }
+
+    // signature = SHA256("{account_id}{amount}{transaction_id}{user_id}{secret_key}")
+    const sigString = `${accountId}${amount}${txId}${userId}${secret}`;
+    const signature = await sha256(sigString);
+
+    const payload = {
+        transaction_id: txId,
+        user_id: userId,
+        account_id: accountId,
+        amount: parseFloat(amount),
+        signature: signature,
+    };
+
+    resultEl.classList.add('active');
+    resultEl.textContent = `Отправка:\n${JSON.stringify(payload, null, 2)}\n\n`;
+
+    try {
+        const res = await api('POST', '/api/webhook/payment', payload);
+        resultEl.textContent += `Ответ (200):\n${JSON.stringify(res, null, 2)}`;
+        showAppAlert('success', 'Вебхук обработан');
+        loadAccounts();
+        loadPayments();
+    } catch (err) {
+        resultEl.textContent += `Ошибка (${err.status}):\n${JSON.stringify(err.detail, null, 2)}`;
+        showAppAlert('error', err.detail || 'Ошибка вебхука');
+    }
+
+    generateTxId();
+}
+
+// ==================== Init ====================
+(async function() {
+    generateTxId();
+    try {
+        currentUser = await api('GET', '/api/users/me');
+        initApp();
+    } catch (err) {
+        document.getElementById('auth-view').style.display = 'flex';
+    }
+})();
+</script>
+</body>
+</html>
