@@ -246,7 +246,7 @@
                 <h3>Тестер вебхука</h3>
                 <p style="color:#888;font-size:13px;margin-bottom:16px">
                     Эмуляция запроса от сторонней платёжной системы.
-                    Подпись генерируется автоматически (SHA256).
+                    Подпись генерируется на клиенте (SHA256).
                 </p>
                 <div class="form-group">
                     <label>User ID</label>
@@ -287,6 +287,73 @@
 // ==================== State ====================
 let currentUser = null;
 
+// ==================== Error translations ====================
+const ERROR_MAP = {
+    'Invalid email or password': 'Неверный email или пароль',
+    'Email already registered': 'Этот email уже зарегистрирован',
+    'User not found': 'Пользователь не найден',
+    'Account not found': 'Счёт не найден',
+    'Account belongs to another user': 'Счёт принадлежит другому пользователю',
+    'Invalid signature': 'Неверная подпись вебхука',
+    'Admin access required': 'Требуются права администратора',
+    'Could not validate credentials': 'Необходима авторизация',
+};
+
+// ==================== Error helpers ====================
+function formatError(err) {
+    if (!err) return 'Неизвестная ошибка';
+
+    // Сетевая ошибка (fetch выбросил исключение)
+    if (err instanceof TypeError && err.message.includes('fetch')) {
+        return 'Сервер недоступен. Проверьте, что приложение запущено.';
+    }
+
+    // Ошибка от API
+    if (err.detail !== undefined) {
+        // detail — строка
+        if (typeof err.detail === 'string') {
+            return ERROR_MAP[err.detail] || err.detail;
+        }
+        // detail — массив (ошибки валидации Pydantic/FastAPI 422)
+        if (Array.isArray(err.detail)) {
+            const messages = err.detail.map(item => {
+                if (item.msg) {
+                    let msg = item.msg;
+                    // Извлекаем имя поля из loc
+                    const field = item.loc && item.loc.length > 1 ? item.loc[item.loc.length - 1] : '';
+                    if (field) {
+                        return `${field}: ${translateValidationMsg(msg)}`;
+                    }
+                    return translateValidationMsg(msg);
+                }
+                return JSON.stringify(item);
+            });
+            return messages.join('; ');
+        }
+        // detail — объект
+        if (typeof err.detail === 'object') {
+            return JSON.stringify(err.detail);
+        }
+    }
+
+    return err.message || 'Неизвестная ошибка';
+}
+
+function translateValidationMsg(msg) {
+    const map = {
+        'field required': 'обязательное поле',
+        'string_too_short': 'слишком короткое значение',
+        'string_too_long': 'слишком длинное значение',
+        'value_error': 'некорректное значение',
+        'missing': 'обязательное поле',
+        'invalid email': 'некорректный email',
+    };
+    for (const [key, val] of Object.entries(map)) {
+        if (msg.includes(key)) return val;
+    }
+    return msg;
+}
+
 // ==================== API helper ====================
 async function api(method, path, body) {
     const opts = {
@@ -298,12 +365,24 @@ async function api(method, path, body) {
         opts.headers['Content-Type'] = 'application/json';
         opts.body = JSON.stringify(body);
     }
-    const res = await fetch(path, opts);
+
+    let res;
+    try {
+        res = await fetch(path, opts);
+    } catch (networkErr) {
+        throw { status: 0, detail: 'Сервер недоступен. Проверьте, что приложение запущено.' };
+    }
+
     const text = await res.text();
-    const data = text ? JSON.parse(text) : null;
+    let data = null;
+    try {
+        data = text ? JSON.parse(text) : null;
+    } catch (e) {
+        data = { detail: text };
+    }
 
     if (!res.ok) {
-        throw { status: res.status, detail: data?.detail || 'Unknown error' };
+        throw { status: res.status, detail: data?.detail ?? `Ошибка ${res.status}` };
     }
     return data;
 }
@@ -312,19 +391,20 @@ async function api(method, path, body) {
 function showAuthAlert(type, msg) {
     const el = document.getElementById('auth-alert');
     el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-    setTimeout(() => el.innerHTML = '', 4000);
+    if (type === 'error') setTimeout(() => el.innerHTML = '', 6000);
+    else setTimeout(() => el.innerHTML = '', 4000);
 }
 
 function showAppAlert(type, msg) {
     const el = document.getElementById('app-alert');
     el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-    setTimeout(() => el.innerHTML = '', 4000);
+    if (type === 'error') setTimeout(() => el.innerHTML = '', 6000);
+    else setTimeout(() => el.innerHTML = '', 4000);
 }
 
 // ==================== Auth tabs ====================
 function switchAuthTab(tab) {
     document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-    document.querySelector(`.auth-tab`).classList.remove('active');
     event.target.classList.add('active');
     document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
     document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
@@ -338,7 +418,7 @@ async function doLogin() {
         await api('POST', '/api/auth/login', { email, password });
         await initApp();
     } catch (err) {
-        showAuthAlert('error', err.detail || 'Ошибка входа');
+        showAuthAlert('error', formatError(err));
     }
 }
 
@@ -350,7 +430,7 @@ async function doRegister() {
         await api('POST', '/api/auth/register', { full_name, email, password });
         await initApp();
     } catch (err) {
-        showAuthAlert('error', err.detail || 'Ошибка регистрации');
+        showAuthAlert('error', formatError(err));
     }
 }
 
@@ -433,7 +513,7 @@ async function loadAccounts() {
         html += '</tbody></table></div>';
         el.innerHTML = html;
     } catch (err) {
-        showAppAlert('error', 'Не удалось загрузить счета');
+        showAppAlert('error', 'Не удалось загрузить счета: ' + formatError(err));
     }
 }
 
@@ -443,7 +523,7 @@ async function createAccount() {
         showAppAlert('success', 'Счёт создан');
         loadAccounts();
     } catch (err) {
-        showAppAlert('error', err.detail || 'Ошибка создания счёта');
+        showAppAlert('error', formatError(err));
     }
 }
 
@@ -454,7 +534,7 @@ async function deleteAccount(id) {
         showAppAlert('success', 'Счёт удалён');
         loadAccounts();
     } catch (err) {
-        showAppAlert('error', err.detail || 'Ошибка удаления');
+        showAppAlert('error', formatError(err));
     }
 }
 
@@ -484,7 +564,7 @@ async function loadPayments() {
         html += '</tbody></table>';
         el.innerHTML = html;
     } catch (err) {
-        document.getElementById('payments-list').innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
+        document.getElementById('payments-list').innerHTML = '<div class="empty-state">Ошибка загрузки: ' + formatError(err) + '</div>';
     }
 }
 
@@ -511,7 +591,7 @@ async function loadAdminUsers() {
         html += '</tbody></table></div>';
         el.innerHTML = html;
     } catch (err) {
-        document.getElementById('admin-users-list').innerHTML = '<div class="card"><div class="empty-state">Ошибка загрузки</div></div>';
+        document.getElementById('admin-users-list').innerHTML = '<div class="card"><div class="empty-state">Ошибка: ' + formatError(err) + '</div></div>';
     }
 }
 
@@ -552,7 +632,7 @@ async function showEditUserModal(userId) {
         `;
         document.getElementById('modal-overlay').classList.add('active');
     } catch (err) {
-        showAppAlert('error', 'Ошибка загрузки данных');
+        showAppAlert('error', 'Ошибка загрузки: ' + formatError(err));
     }
 }
 
@@ -567,7 +647,7 @@ async function adminCreateUser() {
         showAppAlert('success', 'Пользователь создан');
         loadAdminUsers();
     } catch (err) {
-        showAppAlert('error', err.detail || 'Ошибка');
+        showAppAlert('error', formatError(err));
     }
 }
 
@@ -584,7 +664,7 @@ async function adminUpdateUser(userId) {
         showAppAlert('success', 'Пользователь обновлён');
         loadAdminUsers();
     } catch (err) {
-        showAppAlert('error', err.detail || 'Ошибка');
+        showAppAlert('error', formatError(err));
     }
 }
 
@@ -595,7 +675,7 @@ async function deleteUser(userId) {
         showAppAlert('success', 'Пользователь удалён');
         loadAdminUsers();
     } catch (err) {
-        showAppAlert('error', err.detail || 'Ошибка');
+        showAppAlert('error', formatError(err));
     }
 }
 
@@ -618,7 +698,7 @@ async function viewUserAccounts(userId) {
         document.getElementById('modal-content').innerHTML = html;
         document.getElementById('modal-overlay').classList.add('active');
     } catch (err) {
-        showAppAlert('error', 'Ошибка загрузки счетов');
+        showAppAlert('error', 'Ошибка: ' + formatError(err));
     }
 }
 
@@ -674,8 +754,9 @@ async function sendWebhook() {
         loadAccounts();
         loadPayments();
     } catch (err) {
-        resultEl.textContent += `Ошибка (${err.status}):\n${JSON.stringify(err.detail, null, 2)}`;
-        showAppAlert('error', err.detail || 'Ошибка вебхука');
+        const errMsg = formatError(err);
+        resultEl.textContent += `Ошибка (${err.status}):\n${errMsg}`;
+        showAppAlert('error', errMsg);
     }
 
     generateTxId();
