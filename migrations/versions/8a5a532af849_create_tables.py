@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from passlib.context import CryptContext
 
 
 # revision identifiers, used by Alembic.
@@ -16,6 +17,8 @@ revision: str = '8a5a532af849'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def upgrade() -> None:
@@ -57,6 +60,50 @@ def upgrade() -> None:
     op.create_index(op.f('ix_payments_transaction_id'), 'payments', ['transaction_id'], unique=True)
     op.create_index(op.f('ix_payments_user_id'), 'payments', ['user_id'], unique=False)
     # ### end Alembic commands ###
+
+    # --- Сид-данные для тестирования ---
+    users_table = sa.table(
+        'users',
+        sa.column('id', sa.Integer),
+        sa.column('email', sa.String),
+        sa.column('full_name', sa.String),
+        sa.column('password', sa.String),
+        sa.column('role', sa.Enum),
+    )
+    accounts_table = sa.table(
+        'accounts',
+        sa.column('id', sa.Integer),
+        sa.column('user_id', sa.Integer),
+        sa.column('balance', sa.Numeric),
+    )
+
+    # Тестовый пользователь
+    op.bulk_insert(users_table, [
+        {
+            'id': 1,
+            'email': 'user@test.com',
+            'full_name': 'Test User',
+            'password': pwd_context.hash('userpass'),
+            'role': 'user',
+        },
+        # Тестовый администратор
+        {
+            'id': 2,
+            'email': 'admin@test.com',
+            'full_name': 'Test Admin',
+            'password': pwd_context.hash('adminpass'),
+            'role': 'admin',
+        },
+    ])
+
+    # Счёт тестового пользователя
+    op.bulk_insert(accounts_table, [
+        {
+            'id': 1,
+            'user_id': 1,
+            'balance': 0,
+        },
+    ])
 
 
 def downgrade() -> None:
