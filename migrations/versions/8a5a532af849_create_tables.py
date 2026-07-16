@@ -68,7 +68,7 @@ def upgrade() -> None:
         sa.column('email', sa.String),
         sa.column('full_name', sa.String),
         sa.column('password', sa.String),
-        sa.column('role', sa.Enum),
+        sa.column('role', sa.Enum(name='user_role')),
     )
     accounts_table = sa.table(
         'accounts',
