@@ -67,11 +67,9 @@ async def process_payment_webhook(
             detail="Invalid signature",
         )
 
-    # 2. Проверка идемпотентности — если транзакция уже обработана, возвращаем 200
     if await PaymentService.get_by_transaction_id(db, data.transaction_id) is not None:
         return {"status": "already_processed"}
 
-    # 3. Проверка существования пользователя
     user = await UserService.get_by_id(db, data.user_id)
     if user is None:
         raise HTTPException(
@@ -79,25 +77,21 @@ async def process_payment_webhook(
             detail="User not found",
         )
 
-    # 4. Проверка / создание счёта
     account = await AccountService.get_by_id_and_user(
         db, data.account_id, data.user_id
     )
 
     if account is None:
-        # Проверяем, не принадлежит ли account_id другому пользователю
         existing_account = await AccountService.get_by_id(db, data.account_id)
         if existing_account is not None:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Account belongs to another user",
             )
-        # Создаём новый счёт для пользователя (без commit — фиксируется вместе с платежом)
         account = await AccountService.create(
             db, commit=False, user_id=data.user_id, account_id=data.account_id
         )
 
-    # 5. Сохранение платежа и начисление суммы на баланс
     result = await PaymentService.create_and_credit(
         db,
         account=account,

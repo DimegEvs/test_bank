@@ -30,7 +30,6 @@ app.include_router(admin_router)
 app.include_router(webhook_router)
 
 
-# UI — отдача через Jinja2 templates
 @app.get("/", tags=["UI"])
 async def ui(request: Request):
     """Отдаёт главную страницу веб-интерфейса.
